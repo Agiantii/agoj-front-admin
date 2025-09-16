@@ -28,6 +28,8 @@ leetcode 风格，暗色
     - 获取题目样例支持列表渲染显示，支持查看详情，也支持 zip返回，
 - 登录
   - 简单点,接收后端的map.role是不是admi即可,不用token,成功后保存用户id等
+  - navigation 的下拉显示有问题，
+  - 创建题目改为创建一个空题目,根据返回的problemId,跳转到 problem/edit/[id]下
 ```js
 import axios from "axios"
 import JSONbig from 'json-bigint';

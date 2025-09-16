@@ -7,9 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Search, Plus, Edit, Trash2, Eye } from "lucide-react"
-import { searchProblems, deleteProblem, type Problem } from "@/lib/api"
+import { searchProblems, deleteProblem, createProblem, type Problem } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,7 +29,9 @@ export default function ProblemsPage() {
   const [searchKeyword, setSearchKeyword] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [isCreating, setIsCreating] = useState(false)
   const { toast } = useToast()
+  const router = useRouter()
 
   const pageSize = 10
 
@@ -83,6 +86,44 @@ export default function ProblemsPage() {
     }
   }
 
+  // 创建空题目并跳转到编辑页面
+  const handleCreateProblem = async () => {
+    setIsCreating(true)
+    try {
+      // 创建一个空题目
+      const response = await createProblem({
+        title: "新题目",
+        description: "请输入题目描述...",
+        difficulty: 1,
+        timeLimit: 1000,
+        memoryLimit: 256,
+        status: 0, // 草稿状态
+        testInput: "",
+        testOutput: "",
+      })
+
+      if (response.data && response.data.id) {
+        toast({
+          title: "创建成功",
+          description: "正在跳转到编辑页面...",
+        })
+        // 跳转到编辑页面
+        router.push(`/problem/edit/${response.data.id}`)
+      } else {
+        throw new Error("未获取到题目 ID")
+      }
+    } catch (error: any) {
+      console.error("创建题目失败:", error)
+      toast({
+        title: "创建失败",
+        description: error.message || "创建题目时发生错误",
+        variant: "destructive",
+      })
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   const getDifficultyBadge = (difficulty: number) => {
     const difficultyMap = {
       1: { label: "简单", variant: "secondary" as const },
@@ -107,12 +148,14 @@ export default function ProblemsPage() {
           <h1 className="text-3xl font-bold">题目管理</h1>
           <p className="text-muted-foreground mt-2">管理和编辑所有编程题目</p>
         </div>
-        <Link href="/problem/create">
-          <Button className="flex items-center space-x-2">
-            <Plus className="h-4 w-4" />
-            <span>创建题目</span>
-          </Button>
-        </Link>
+        <Button 
+          className="flex items-center space-x-2"
+          onClick={handleCreateProblem}
+          disabled={isCreating}
+        >
+          <Plus className="h-4 w-4" />
+          <span>{isCreating ? "创建中..." : "创建题目"}</span>
+        </Button>
       </div>
 
       <Card>

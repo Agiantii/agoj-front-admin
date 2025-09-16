@@ -107,7 +107,7 @@ export default function EditProblemPage() {
       console.error("获取测试用例失败:", error)
       toast({
         title: "获取测试用例失败",
-        description: "请检查网络连接或稍后重试",
+        description: "该题目前暂无测试样例",
         variant: "destructive",
       })
     } finally {
