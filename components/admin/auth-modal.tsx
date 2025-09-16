@@ -35,16 +35,22 @@ export function AuthModal({ open, onClose, onLogin }: AuthModalProps) {
 
     try {
       await login(loginForm.username, loginForm.password)
+      
+      // 检查登录是否成功（检查用户信息是否存在）
       const userInfo = localStorage.getItem("userInfo")
       if (userInfo) {
-        onLogin(JSON.parse(userInfo))
+        const userData = JSON.parse(userInfo)
+        onLogin(userData)
+        toast({
+          title: "登录成功",
+          description: "欢迎回来！",
+        })
+        onClose()
+      } else {
+        throw new Error("登录失败，未获取到用户信息")
       }
-      toast({
-        title: "登录成功",
-        description: "欢迎回来！",
-      })
-      onClose()
     } catch (error: any) {
+      console.error("登录错误:", error)
       toast({
         title: "登录失败",
         description: error.message || "用户名或密码错误",

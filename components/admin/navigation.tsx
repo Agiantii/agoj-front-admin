@@ -51,7 +51,6 @@ export function AdminNavigation({ activeTab, onTabChange }: NavigationProps) {
   const handleLogout = () => {
     setIsLoggedIn(false)
     setUserInfo(null)
-    localStorage.removeItem("token")
     localStorage.removeItem("userInfo")
   }
 

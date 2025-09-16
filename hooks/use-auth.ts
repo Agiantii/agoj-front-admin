@@ -28,15 +28,19 @@ export function useAuthState() {
 
   useEffect(() => {
     // Check for existing auth on mount
-    const token = localStorage.getItem("token")
     const userInfo = localStorage.getItem("userInfo")
 
-    if (token && userInfo) {
+    if (userInfo) {
       try {
-        setUser(JSON.parse(userInfo))
+        const userData = JSON.parse(userInfo)
+        // 检查用户角色是否为 admin
+        if (userData.role === 'admin') {
+          setUser(userData)
+        } else {
+          localStorage.removeItem("userInfo")
+        }
       } catch (error) {
         console.error("Failed to parse user info:", error)
-        localStorage.removeItem("token")
         localStorage.removeItem("userInfo")
       }
     }
@@ -46,15 +50,33 @@ export function useAuthState() {
   const login = async (username: string, password: string) => {
     setIsLoading(true)
     try {
+      console.log('开始登录:', username)
       const response = await apiLogin(username, password)
-      if (response.code === 0 || response.code === 200) {
-        const { token, user: userData } = response.data
-        localStorage.setItem("token", token)
-        localStorage.setItem("userInfo", JSON.stringify(userData))
-        setUser(userData)
+      console.log('登录响应:', response)
+      
+      // 检查响应格式和角色验证
+      if ((response.code === 0 || response.code === 200)) {
+        const userData = response
+        console.log('用户数据:', userData)
+        console.log('角色信息 - map.role:', response.map?.role, 'data.role:', userData.role)
+        
+        // 检查 map.role 或 data.role 是否为 admin
+        if (response.map.role === 'admin' || userData.role === 'admin') {
+          // 保存用户信息（不保存 token）
+          localStorage.setItem("userInfo", JSON.stringify(userData))
+          setUser(userData)
+          console.log('登录成功，用户角色:', userData.role)
+        } else {
+          console.log('权限不足，角色:', userData.role)
+          throw new Error("您没有管理员权限")
+        }
       } else {
+        console.log('响应状态码错误:', response.code)
         throw new Error(response.msg || "登录失败")
       }
+    } catch (error) {
+      console.error('登录异常:', error)
+      throw error // 重新抛出异常，让上层处理
     } finally {
       setIsLoading(false)
     }
@@ -73,7 +95,6 @@ export function useAuthState() {
   }
 
   const logout = () => {
-    localStorage.removeItem("token")
     localStorage.removeItem("userInfo")
     setUser(null)
   }
