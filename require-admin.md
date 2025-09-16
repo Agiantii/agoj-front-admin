@@ -24,6 +24,8 @@ leetcode 风格，暗色
     - 进入题目详情
       修改各个信息
     - 支持 粘贴图片,用 lib/api提供的接口实现，返回一个url
+    - 支持 zip拖拽上传
+    - 获取题目样例支持列表渲染显示，支持查看详情，也支持 zip返回，
 ```js
 import axios from "axios"
 import JSONbig from 'json-bigint';

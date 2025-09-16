@@ -134,7 +134,19 @@ export const deleteProblem = (problemId: string | number) => {
 }
 
 // ==================== 题目测试用例相关接口 ====================
-
+// 获取题目测试用例 返回zip文件
+export const getProblemCasesByZip = (problemId: string | number, file: File) => {
+  return request.post("/problemCase/getProblemCasesByZip", file, {
+    params: { problemId },
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  })
+}
+// 获取题目测试用例 
+export const getProblemCases = (problemId: string | number) => {
+  return request.get("problemCase/getProblemCases", { params: { problemId } })
+}
 export const uploadProblemCasesZip = (problemId: string | number, file: File) => {
   const formData = new FormData()
   formData.append("file", file)

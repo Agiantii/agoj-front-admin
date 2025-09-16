@@ -10,8 +10,11 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Save, Upload } from "lucide-react"
-import { getProblemDetail, updateProblem, uploadProblemCasesZip, type Problem } from "@/lib/api"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Badge } from "@/components/ui/badge"
+import { ArrowLeft, Save, Upload, Download, Eye, RefreshCw } from "lucide-react"
+import { getProblemDetail, updateProblem, uploadProblemCasesZip, getProblemCases, type Problem } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
 
@@ -22,6 +25,9 @@ export default function EditProblemPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [testCases, setTestCases] = useState<any[]>([])
+  const [loadingCases, setLoadingCases] = useState(false)
+  const [dragActive, setDragActive] = useState(false)
 
   const problemId = params.id as string
 
@@ -87,6 +93,34 @@ export default function EditProblemPage() {
     }
   }, [problemId, router, toast])
 
+  // 获取测试用例
+  const fetchTestCases = async () => {
+    if (!problemId) return
+    setLoadingCases(true)
+    try {
+      const response = await getProblemCases(problemId)
+      if (response.data) {
+        setTestCases(Array.isArray(response.data) ? response.data : [])
+      }
+    } catch (error) {
+      console.error("获取测试用例失败:", error)
+      toast({
+        title: "获取测试用例失败",
+        description: "请检查网络连接或稍后重试",
+        variant: "destructive",
+      })
+    } finally {
+      setLoadingCases(false)
+    }
+  }
+
+  // 在组件加载时获取测试用例
+  useEffect(() => {
+    if (problemId && !loading) {
+      fetchTestCases()
+    }
+  }, [problemId, loading])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
@@ -121,13 +155,22 @@ export default function EditProblemPage() {
       return
     }
 
+    await uploadZipFile(file)
+    // 清空文件输入
+    e.target.value = ""
+  }
+
+  // ZIP 文件上传函数
+  const uploadZipFile = async (file: File) => {
     setUploading(true)
     try {
       await uploadProblemCasesZip(problemId, file)
       toast({
         title: "上传成功",
-        description: "测试用例已成功上传",
+        description: "测试用例已成功上传，正在刷新列表...",
       })
+      // 重新获取测试用例
+      await fetchTestCases()
     } catch (error) {
       toast({
         title: "上传失败",
@@ -136,8 +179,43 @@ export default function EditProblemPage() {
       })
     } finally {
       setUploading(false)
-      // 清空文件输入
-      e.target.value = ""
+    }
+  }
+
+  // 处理拖拽事件
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+
+    const files = Array.from(e.dataTransfer.files)
+    const zipFile = files.find(file => file.name.endsWith(".zip"))
+    
+    if (zipFile) {
+      uploadZipFile(zipFile)
+    } else {
+      toast({
+        title: "文件格式错误",
+        description: "请拖拽 ZIP 格式的测试用例文件",
+        variant: "destructive",
+      })
     }
   }
 
@@ -292,29 +370,177 @@ export default function EditProblemPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>测试用例</CardTitle>
-              <CardDescription>上传 ZIP 格式的测试用例文件</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>测试用例管理</CardTitle>
+                  <CardDescription>上传 ZIP 格式的测试用例文件，支持拖拽上传</CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchTestCases}
+                  disabled={loadingCases}
+                >
+                  {loadingCases ? (
+                    <Upload className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground mb-2">选择 ZIP 文件上传测试用例</p>
-                  <input
-                    type="file"
-                    accept=".zip"
-                    onChange={handleFileUpload}
-                    disabled={uploading}
-                    className="hidden"
-                    id="zip-upload"
-                  />
-                  <label htmlFor="zip-upload">
-                    <Button variant="outline" disabled={uploading} asChild>
-                      <span>{uploading ? "上传中..." : "选择文件"}</span>
-                    </Button>
-                  </label>
+              <div className="space-y-6">
+                {/* 拖拽上传区域 */}
+                <div
+                  className={`
+                    border-2 border-dashed rounded-lg p-8 text-center transition-colors
+                    ${
+                      dragActive
+                        ? "border-primary bg-primary/5"
+                        : "border-muted-foreground/25 hover:border-muted-foreground/50"
+                    }
+                    ${uploading ? "pointer-events-none opacity-50" : ""}
+                  `}
+                  onDragEnter={handleDragEnter}
+                  onDragLeave={handleDragLeave}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                >
+                  <div className="space-y-4">
+                    <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                      {uploading ? (
+                        <Upload className="h-8 w-8 animate-spin text-muted-foreground" />
+                      ) : (
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-medium">
+                        {dragActive ? "释放文件以上传" : "拖拽 ZIP 文件到此处"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        或者点击下方按钮选择文件
+                      </p>
+                    </div>
+
+                    <div className="flex justify-center">
+                      <input
+                        type="file"
+                        accept=".zip"
+                        onChange={handleFileUpload}
+                        disabled={uploading}
+                        className="hidden"
+                        id="zip-upload"
+                      />
+                      <label htmlFor="zip-upload">
+                        <Button
+                          variant="outline"
+                          disabled={uploading}
+                          asChild
+                        >
+                          <span>
+                            {uploading ? "上传中..." : "选择 ZIP 文件"}
+                          </span>
+                        </Button>
+                      </label>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      ZIP 文件应包含输入文件 (*.in) 和对应的输出文件 (*.out)
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">ZIP 文件应包含输入文件 (*.in) 和对应的输出文件 (*.out)</p>
+
+                {/* 测试用例列表 */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium">
+                      测试用例列表
+                      <Badge variant="secondary" className="ml-2">
+                        {testCases.length} 个用例
+                      </Badge>
+                    </h4>
+                  </div>
+
+                  {loadingCases ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Upload className="h-6 w-6 animate-spin mr-2" />
+                      <span className="text-sm text-muted-foreground">加载中...</span>
+                    </div>
+                  ) : testCases.length > 0 ? (
+                    <div className="grid gap-3 max-h-96 overflow-y-auto">
+                      {testCases.map((testCase, index) => (
+                        <Card key={testCase.id || index} className="border">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <Badge variant="outline">
+                                  用例 {index + 1}
+                                </Badge>
+                                <span className="text-sm text-muted-foreground">
+                                  输入: {testCase.input?.length || 0} 字符
+                                </span>
+                                <span className="text-sm text-muted-foreground">
+                                  输出: {testCase.output?.length || 0} 字符
+                                </span>
+                              </div>
+                              
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                  >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    查看详情
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-4xl max-h-[80vh]">
+                                  <DialogHeader>
+                                    <DialogTitle>测试用例 {index + 1} 详情</DialogTitle>
+                                  </DialogHeader>
+                                  <ScrollArea className="h-[60vh]">
+                                    <div className="space-y-4">
+                                      <div>
+                                        <h5 className="font-medium mb-2">输入数据</h5>
+                                        <Card>
+                                          <CardContent className="p-3">
+                                            <pre className="text-sm whitespace-pre-wrap bg-muted p-3 rounded">
+                                              {testCase.input || "无输入数据"}
+                                            </pre>
+                                          </CardContent>
+                                        </Card>
+                                      </div>
+                                      
+                                      <div>
+                                        <h5 className="font-medium mb-2">期望输出</h5>
+                                        <Card>
+                                          <CardContent className="p-3">
+                                            <pre className="text-sm whitespace-pre-wrap bg-muted p-3 rounded">
+                                              {testCase.output || "无输出数据"}
+                                            </pre>
+                                          </CardContent>
+                                        </Card>
+                                      </div>
+                                    </div>
+                                  </ScrollArea>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Upload className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>暂无测试用例</p>
+                      <p className="text-sm">请上传 ZIP 文件添加测试用例</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
