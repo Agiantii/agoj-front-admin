@@ -124,7 +124,9 @@ export const updateProblem = (
 }
 
 export const deleteProblem = (problemId: string | number) => {
-  return request.delete(`/problem/${problemId}`)
+  return request.get(`/problem/delete`,{
+    params: { problemId },
+  })
 }
 
 // ==================== 题目测试用例相关接口 ====================

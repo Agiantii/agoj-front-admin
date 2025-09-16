@@ -124,6 +124,11 @@
     @apply bg-background text-foreground;
   }
   
+  /* 确保下拉菜单正确显示 */
+  [data-radix-popper-content-wrapper] {
+    z-index: 100 !important;
+  }
+  
   /* KaTeX 公式在暗色主题下的样式修复 */
   .dark .katex {
     color: hsl(var(--foreground));
