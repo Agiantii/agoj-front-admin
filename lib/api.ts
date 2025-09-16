@@ -12,12 +12,7 @@ const request = axios.create({
 
 request.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token")
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-
-    // 从localStorage获取userId
+    // 不再使用 token，只使用 userInfo
     const userInfo = localStorage.getItem("userInfo")
     if (userInfo) {
       const { id } = JSON.parse(userInfo)
@@ -52,7 +47,6 @@ request.interceptors.response.use(
 
     // 如果是401错误，清除登录状态
     if (error.response?.status === 401) {
-      localStorage.removeItem("token")
       localStorage.removeItem("userInfo")
       window.location.href = "/login"
     }
@@ -135,13 +129,12 @@ export const deleteProblem = (problemId: string | number) => {
 
 // ==================== 题目测试用例相关接口 ====================
 // 获取题目测试用例 返回zip文件
-export const getProblemCasesByZip = (problemId: string | number, file: File) => {
-  return request.post("/problemCase/getProblemCasesByZip", file, {
-    params: { problemId },
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  })
+export const getProblemCasesByZip = (problemId: string | number) => {
+//get请求 不用request
+return axios.get(`${api_baseURL}/problemCase/downloadZip`, {
+  params: { problemId },
+  responseType: "blob",
+})
 }
 // 获取题目测试用例 
 export const getProblemCases = (problemId: string | number) => {

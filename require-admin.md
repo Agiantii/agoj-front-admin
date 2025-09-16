@@ -26,6 +26,8 @@ leetcode 风格，暗色
     - 支持 粘贴图片,用 lib/api提供的接口实现，返回一个url
     - 支持 zip拖拽上传
     - 获取题目样例支持列表渲染显示，支持查看详情，也支持 zip返回，
+- 登录
+  - 简单点,接收后端的map.role是不是admi即可,不用token,成功后保存用户id等
 ```js
 import axios from "axios"
 import JSONbig from 'json-bigint';

@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Save, Upload, Download, Eye, RefreshCw } from "lucide-react"
-import { getProblemDetail, updateProblem, uploadProblemCasesZip, getProblemCases, type Problem } from "@/lib/api"
+import { getProblemDetail, updateProblem, uploadProblemCasesZip, getProblemCases, getProblemCasesByZip, type Problem } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
 
@@ -25,6 +25,7 @@ export default function EditProblemPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [downloading, setDownloading] = useState(false)
   const [testCases, setTestCases] = useState<any[]>([])
   const [loadingCases, setLoadingCases] = useState(false)
   const [dragActive, setDragActive] = useState(false)
@@ -219,6 +220,38 @@ export default function EditProblemPage() {
     }
   }
 
+  // 下载测试用例 ZIP 文件
+  const handleDownloadCases = async () => {
+    setDownloading(true)
+    try {
+      const response = await getProblemCasesByZip(problemId)
+      
+      // 直接使用响应数据，已经是 Blob 类型
+      const url = window.URL.createObjectURL(response.data)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `problem-${problemId}-testcases.zip`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      toast({
+        title: "下载成功",
+        description: "测试用例 ZIP 文件已下载",
+      })
+    } catch (error) {
+      console.error("下载测试用例失败:", error)
+      toast({
+        title: "下载失败",
+        description: "请检查网络连接或稍后重试",
+        variant: "destructive",
+      })
+    } finally {
+      setDownloading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -375,18 +408,33 @@ export default function EditProblemPage() {
                   <CardTitle>测试用例管理</CardTitle>
                   <CardDescription>上传 ZIP 格式的测试用例文件，支持拖拽上传</CardDescription>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={fetchTestCases}
-                  disabled={loadingCases}
-                >
-                  {loadingCases ? (
-                    <Upload className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4" />
-                  )}
-                </Button>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadCases}
+                    disabled={downloading || testCases.length === 0}
+                  >
+                    {downloading ? (
+                      <Download className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4" />
+                    )}
+                    <span className="ml-2">下载 ZIP</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={fetchTestCases}
+                    disabled={loadingCases}
+                  >
+                    {loadingCases ? (
+                      <Upload className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
