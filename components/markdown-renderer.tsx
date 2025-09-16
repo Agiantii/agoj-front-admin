@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
@@ -55,39 +55,63 @@ const CopyButton = ({ code }: { code: string }) => {
 
 // Markdown 渲染器组件
 export function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
+  // 使用 useMemo 优化插件配置，避免重复创建
+  const remarkPlugins = useMemo(() => [remarkMath], [])
+  const rehypePlugins = useMemo(() => [
+    [rehypeKatex, {
+      strict: false,
+      trust: true,
+      output: 'html'
+    }] as any
+  ], [])
+
+  // 使用 useMemo 优化组件配置
+  const components = useMemo(() => ({
+    code({ node, className, children, ...props }: any) {
+      const match = /language-(\w+)/.exec(className || "")
+      const code = String(children).replace(/\n$/, "")
+
+      // 检查是否为内联代码
+      const isInline = !match && !code.includes('\n')
+
+      if (isInline) {
+        return (
+          <code className={`bg-muted px-1 py-0.5 rounded text-sm ${className || ''}`} {...props}>
+            {children}
+          </code>
+        )
+      }
+
+      return (
+        <div className="relative my-4">
+          <div className="absolute right-2 top-2 z-10">
+            <CopyButton code={code} />
+          </div>
+          <pre className="bg-gray-900 p-4 rounded-md overflow-x-auto">
+            <code className={match ? `language-${match[1]}` : "language-text"}>{code}</code>
+          </pre>
+        </div>
+      )
+    },
+    // 优化数学公式的处理
+    div({ className, children, ...props }: any) {
+      if (className?.includes('katex-display')) {
+        return (
+          <div className={`my-4 ${className}`} {...props}>
+            {children}
+          </div>
+        )
+      }
+      return <div className={className} {...props}>{children}</div>
+    }
+  }), [])
+
   return (
     <div className={`prose prose-invert max-w-none ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkMath]}
-        rehypePlugins={[rehypeKatex]}
-        components={{
-          code({ node, className, children, ...props }) {
-            const match = /language-(\w+)/.exec(className || "")
-            const code = String(children).replace(/\n$/, "")
-
-            // 检查是否为内联代码
-            const isInline = node?.data?.meta === "inline"
-
-            if (isInline) {
-              return (
-                <code className={className} {...props}>
-                  {children}
-                </code>
-              )
-            }
-
-            return (
-              <div className="relative">
-                <div className="absolute right-2 top-2 z-10">
-                  <CopyButton code={code} />
-                </div>
-                <pre className="bg-gray-900 p-4 rounded-md overflow-x-auto">
-                  <code className={match ? `language-${match[1]}` : "language-text"}>{code}</code>
-                </pre>
-              </div>
-            )
-          },
-        }}
+        remarkPlugins={remarkPlugins}
+        rehypePlugins={rehypePlugins}
+        components={components}
       >
         {content || ""}
       </ReactMarkdown>

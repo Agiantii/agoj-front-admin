@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import 'katex/dist/katex.min.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -121,5 +122,19 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  
+  /* KaTeX 公式在暗色主题下的样式修复 */
+  .dark .katex {
+    color: hsl(var(--foreground));
+  }
+  
+  .dark .katex-display {
+    color: hsl(var(--foreground));
+  }
+  
+  /* 防止 KaTeX 公式重复渲染 */
+  .katex-mathml {
+    display: none;
   }
 }

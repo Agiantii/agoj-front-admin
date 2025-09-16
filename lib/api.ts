@@ -110,6 +110,7 @@ export const createProblem = (problemData: {
 export const updateProblem = (
   problemId: string | number,
   problemData: {
+    id?: string | number
     title?: string
     description?: string
     difficulty?: number
@@ -120,7 +121,12 @@ export const updateProblem = (
     testOutput?: string
   },
 ) => {
-  return request.put(`/problem/${problemId}`, problemData)
+  // 确保请求数据中包含 id
+  const dataWithId = {
+    ...problemData,
+    id: problemId,
+  }
+  return request.put(`/problem/update`, dataWithId)
 }
 
 export const deleteProblem = (problemId: string | number) => {

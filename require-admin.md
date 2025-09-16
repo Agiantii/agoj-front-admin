@@ -23,6 +23,7 @@ leetcode 风格，暗色
     - 搜索题目界面
     - 进入题目详情
       修改各个信息
+    - 支持 粘贴图片,用 lib/api提供的接口实现，返回一个url
 ```js
 import axios from "axios"
 import JSONbig from 'json-bigint';

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Save, Upload } from "lucide-react"
-import { searchProblems, updateProblem, uploadProblemCasesZip, type Problem } from "@/lib/api"
+import { getProblemDetail, updateProblem, uploadProblemCasesZip, type Problem } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
 
@@ -36,37 +36,41 @@ export default function EditProblemPage() {
     testOutput: "",
   })
 
+  // 使用 useMemo 优化 Markdown 渲染性能
+  const memoizedMarkdown = useMemo(() => {
+    if (!formData.description.trim()) {
+      return <p className="text-muted-foreground text-sm">暂无内容预览</p>
+    }
+    return <MarkdownRenderer content={formData.description} />
+  }, [formData.description])
+
   useEffect(() => {
     const fetchProblem = async () => {
       try {
-        const response = await searchProblems({
-          pageNum: 1,
-          pageSize: 1000,
-        })
-
-        if (response.data?.records) {
-          const foundProblem = response.data.records.find((p: Problem) => p.id === problemId)
-          if (foundProblem) {
-            setFormData({
-              title: foundProblem.title,
-              description: foundProblem.description,
-              difficulty: foundProblem.difficulty,
-              timeLimit: foundProblem.timeLimit,
-              memoryLimit: foundProblem.memoryLimit,
-              status: foundProblem.status,
-              testInput: foundProblem.testInput || "",
-              testOutput: foundProblem.testOutput || "",
-            })
-          } else {
-            toast({
-              title: "题目不存在",
-              description: "未找到指定的题目",
-              variant: "destructive",
-            })
-            router.push("/problem")
-          }
+        const response = await getProblemDetail(problemId)
+        
+        if (response.data) {
+          const problem = response.data
+          setFormData({
+            title: problem.title || "",
+            description: problem.description || "",
+            difficulty: problem.difficulty || 1,
+            timeLimit: problem.timeLimit || 1000,
+            memoryLimit: problem.memoryLimit || 256,
+            status: problem.status || 1,
+            testInput: problem.testInput || "",
+            testOutput: problem.testOutput || "",
+          })
+        } else {
+          toast({
+            title: "题目不存在",
+            description: "未找到指定的题目",
+            variant: "destructive",
+          })
+          router.push("/problem")
         }
       } catch (error) {
+        console.error("获取题目详情失败:", error)
         toast({
           title: "获取题目失败",
           description: "请检查网络连接或稍后重试",
@@ -93,7 +97,6 @@ export default function EditProblemPage() {
         title: "更新成功",
         description: "题目信息已成功更新",
       })
-      router.push(`/problem/${problemId}`)
     } catch (error) {
       toast({
         title: "更新失败",
@@ -324,7 +327,7 @@ export default function EditProblemPage() {
               <CardDescription>题目描述预览</CardDescription>
             </CardHeader>
             <CardContent>
-              <MarkdownRenderer content={formData.description} />
+              {memoizedMarkdown}
             </CardContent>
           </Card>
         </div>
