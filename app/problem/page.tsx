@@ -42,6 +42,7 @@ export default function ProblemsPage() {
       })
 
       if (response.data) {
+        console.log(response.data)
         setProblems(response.data.records || [])
         setTotalPages(Math.ceil((response.data.total || 0) / pageSize))
       }
