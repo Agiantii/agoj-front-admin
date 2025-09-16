@@ -172,7 +172,7 @@ export const rejectSolution = (solutionId: string | number) => {
 }
 
 export const deleteSolution = (solutionId: string | number) => {
-  return request.get("/solution/reject", { params: { solutionId } })
+  return request.get("/solution/delete", { params: { solutionId } })
   // return request.delete(`/solution/${solutionId}`)
 }
 

@@ -29,7 +29,7 @@ export default function SolutionPage() {
   const [solutions, setSolutions] = useState<Solution[]>([])
   const [loading, setLoading] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState("")
-  const [statusFilter, setStatusFilter] = useState("0") // 0: 待审核, 1: 已通过, 2: 已拒绝
+  const [statusFilter, setStatusFilter] = useState("0") // 0: 未审核,不可见, 1: 审核不通过, 2: 审核通过
   const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
 
@@ -122,11 +122,11 @@ export default function SolutionPage() {
       case 0:
         return <Badge variant="secondary">待审核</Badge>
       case 1:
-        return <Badge variant="default">已通过</Badge>
+        return <Badge variant="destructive">拒绝</Badge>
       case 2:
-        return <Badge variant="destructive">已拒绝</Badge>
+        return <Badge variant="default">通过</Badge>
       default:
-        return <Badge variant="outline">未知</Badge>
+        return <Badge variant="outline">未知状态</Badge>
     }
   }
 
@@ -154,8 +154,8 @@ export default function SolutionPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="0">待审核</SelectItem>
-                  <SelectItem value="1">已通过</SelectItem>
-                  <SelectItem value="2">已拒绝</SelectItem>
+                  <SelectItem value="1">拒绝</SelectItem>
+                  <SelectItem value="2">通过</SelectItem>
                 </SelectContent>
               </Select>
               <Button onClick={handleSearch} disabled={loading}>
@@ -211,9 +211,21 @@ export default function SolutionPage() {
                           </Button>
                           <Button variant="outline" size="sm" onClick={() => handleReject(solution.id)}>
                             <X className="h-4 w-4 mr-1" />
-                            拒绝
+                            不通过
                           </Button>
                         </>
+                      )}
+                      {solution.status === 1 && (
+                        <Button variant="outline" size="sm" onClick={() => handleApprove(solution.id)}>
+                          <Check className="h-4 w-4 mr-1" />
+                          通过
+                        </Button>
+                      )}
+                      {solution.status === 2 && (
+                        <Button variant="outline" size="sm" onClick={() => handleReject(solution.id)}>
+                          <X className="h-4 w-4 mr-1" />
+                          拒绝
+                        </Button>
                       )}
                       <Button variant="outline" size="sm" onClick={() => handleDelete(solution.id)}>
                         <Trash2 className="h-4 w-4 mr-1" />
