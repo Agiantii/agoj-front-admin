@@ -1,8 +1,8 @@
 import axios from "axios"
 import JSONbig from "json-bigint"
 
-const api_baseURL = "http://localhost:9090/api"
-// const api_baseURL = process.env.NEXT_PUBLIC_API_BASE || "http://bc.agiantii.top:9090/api"
+// const api_baseURL = "http://localhost:9090/api"
+const api_baseURL = process.env.NEXT_PUBLIC_API_BASE || "http://bc.agiantii.top:9090/api"
 
 const request = axios.create({
   baseURL: api_baseURL,
