@@ -43,7 +43,7 @@ export default function ProblemsPage() {
 
       if (response.data) {
         console.log(response.data)
-        setProblems(response.data.records || [])
+        setProblems(response.data || [])
         setTotalPages(Math.ceil((response.data.total || 0) / pageSize))
       }
     } catch (error) {
@@ -179,12 +179,12 @@ export default function ProblemsPage() {
                       <TableCell>{new Date(problem.createTime).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          <Link href={`/problem/${problem.id}`}>
+                          <Link href={`/problem/detail/${problem.id}`}>
                             <Button variant="ghost" size="sm">
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
-                          <Link href={`/problem/${problem.id}/edit`}>
+                          <Link href={`/problem/edit/${problem.id}`}>
                             <Button variant="ghost" size="sm">
                               <Edit className="h-4 w-4" />
                             </Button>

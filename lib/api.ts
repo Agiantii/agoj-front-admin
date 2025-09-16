@@ -91,7 +91,9 @@ export const searchProblems = (params: {
 }) => {
   return request.get("/problem/search", { params })
 }
-
+export const getProblemDetail = (problemId: string | number) => {
+  return request.get("/problem/detail", { params: { problemId } })
+}
 export const createProblem = (problemData: {
   title: string
   description: string

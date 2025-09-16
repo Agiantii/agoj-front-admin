@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, Edit, Clock, MemoryStick } from "lucide-react"
-import { searchProblems, type Problem } from "@/lib/api"
+import { getProblemDetail, searchProblems, type Problem } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
@@ -24,25 +24,14 @@ export default function ProblemDetailPage() {
   useEffect(() => {
     const fetchProblem = async () => {
       try {
-        // 使用搜索接口获取单个题目详情
-        const response = await searchProblems({
-          pageNum: 1,
-          pageSize: 1000, // 获取所有题目然后筛选
+        // 根据 路由 参数获取题目
+        const response = await getProblemDetail(
+          problemId
+        )
+        setProblem(response.data)
+        toast({
+          title: "获取题目成功",
         })
-
-        if (response.data?.records) {
-          const foundProblem = response.data.records.find((p: Problem) => p.id === problemId)
-          if (foundProblem) {
-            setProblem(foundProblem)
-          } else {
-            toast({
-              title: "题目不存在",
-              description: "未找到指定的题目",
-              variant: "destructive",
-            })
-            router.push("/problem")
-          }
-        }
       } catch (error) {
         toast({
           title: "获取题目失败",
@@ -111,11 +100,11 @@ export default function ProblemDetailPage() {
             <p className="text-muted-foreground mt-1">题目 ID: {problem.id}</p>
           </div>
         </div>
-        <Link href={`/problem/${problem.id}/edit`}>
+        <Link href={`/problem/edit/${problemId}`}>
           <Button className="flex items-center space-x-2">
             <Edit className="h-4 w-4" />
             <span>编辑题目</span>
-          </Button>
+        </Button>
         </Link>
       </div>
 
