@@ -141,7 +141,7 @@ export function AdminNavigation({ activeTab, onTabChange }: NavigationProps) {
             <div className="flex items-center space-x-8">
               <Link href="/" className="flex items-center space-x-2">
                 <Code className="h-6 w-6 text-primary" />
-                <span className="text-xl font-bold">LeetCode Admin</span>
+                <span className="text-xl font-bold">AGOJ Admin</span>
               </Link>
 
               <div className="hidden md:flex items-center space-x-1">

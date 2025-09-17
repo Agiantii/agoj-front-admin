@@ -10,7 +10,7 @@ import { AdminNavigation } from "@/components/admin/navigation"
 import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
-  title: "LeetCode Admin - 管理员控制台",
+  title: "AGOJ Admin - 管理员控制台",
   description: "编程题目管理和题解审核系统",
   generator: "v0.app",
 }
